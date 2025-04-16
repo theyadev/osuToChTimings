@@ -95,6 +95,11 @@ This output can be directly inserted into a Clone Hero chart file (.chart).
 - **Tick synchronization**: Clone Hero uses 192 ticks per beat as the standard rate; this is used for conversion
 - **Audio misalignment**: If the timing feels off in Clone Hero, ensure you're using the identical audio file from the osu! beatmap
 
+## Acknowledgments
+
+- [Clone Hero Chart Format Documentation](https://github.com/TheNathannator/GuitarGame_ChartFormats/blob/main/doc/FileFormats/General%20Notes.md) - Comprehensive documentation on the Clone Hero tick to time conversion
+- [osu! File Format Documentation](https://osu.ppy.sh/wiki/en/Client/File_formats/osu_%28file_format%29#timing-points) - Official documentation on the osu! beatmap file format, specifically the timing points section
+
 ## License
 
 This project is open source and available under the [MIT License](LICENSE). 
