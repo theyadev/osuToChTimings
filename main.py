@@ -77,8 +77,22 @@ def convert_to_clone_hero_format(
     Returns:
         List of Clone Hero timing points [ticks, bpm, signature, minutes]
     """
-    # Start with a default timing point at tick 0
-    ch_timing_lines = [[0, DEFAULT_BPM, DEFAULT_TIME_SIGNATURE, 0.0]]
+    # Get the first actual BPM from the map to use at tick 0
+    first_bpm = DEFAULT_BPM
+    first_signature = DEFAULT_TIME_SIGNATURE
+    
+    if timing_points:
+        try:
+            parts = timing_points[0].split(",")
+            if len(parts) >= 8:
+                beat_length = float(parts[1])  # in milliseconds
+                first_bpm = round(60000 / beat_length)
+                first_signature = int(parts[2])
+        except (ValueError, IndexError, ZeroDivisionError) as e:
+            logger.warning(f"Could not parse first timing point, using default BPM: {str(e)}")
+    
+    # Start with a timing point at tick 0 with the first BPM from the map
+    ch_timing_lines = [[0, first_bpm, first_signature, 0.0]]
 
     for line in timing_points:
         try:
@@ -95,6 +109,10 @@ def convert_to_clone_hero_format(
             # Calculate BPM from beat length
             bpm = round(60000 / beat_length)
 
+            # Skip if this is the first timing point and it's at time 0
+            if timing == 0 and ch_timing_lines[0][0] == 0:
+                continue
+                
             # Convert osu! timing (ms) to minutes
             minutes = timing / 60000
 
