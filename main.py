@@ -18,8 +18,8 @@ chTimingLines = [
 
 for line in content:
     timing, beatLength, signature, _, _, _, _, _ = line.split(",")
-    bpm = 60000 / float(beatLength)
-    # print(f"Timing: {timing}, Beat Length: {beatLength} ms, Time Signature: {signature}, BPM: {bpm:.2f}")
+    bpm = round(60000 / float(beatLength))
+    print(f"Timing: {timing}, Beat Length: {beatLength} ms, Time Signature: {signature}, BPM: {bpm:.2f}")
     
     minutes = int(timing) / 60000
     minutesElapsed = minutes - chTimingLines[-1][-1]
