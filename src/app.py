@@ -237,6 +237,16 @@ def about():
     """Render the about page."""
     return render_template('about.html')
 
+@app.route('/robots.txt')
+def robots():
+    """Serve robots.txt from static directory."""
+    return send_file('static/robots.txt')
+
+@app.route('/sitemap.xml')
+def sitemap():
+    """Serve sitemap.xml from static directory."""
+    return send_file('static/sitemap.xml')
+
 # Cleanup function to remove old files (only needed for local development)
 def cleanup_old_files():
     """Clean up files older than 1 hour"""

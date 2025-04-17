@@ -4,6 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}osu! to Clone Hero Converter{% endblock %}</title>
+    
+    <!-- Primary Meta Tags -->
+    <meta name="title" content="osu! to Clone Hero Timing Converter">
+    <meta name="description" content="Convert timing points from osu! beatmaps to Clone Hero chart format. A free online tool for rhythm game mappers.">
+    <meta name="keywords" content="osu, Clone Hero, rhythm games, beatmap converter, chart converter, BPM conversion, timing points">
+    <meta name="author" content="theyadev">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.base_url }}">
+    <meta property="og:title" content="osu! to Clone Hero Timing Converter">
+    <meta property="og:description" content="Convert timing points from osu! beatmaps to Clone Hero chart format. Free online tool for rhythm game mappers.">
+    <meta property="og:image" content="{{ url_for('static', filename='img/preview.png', _external=True) }}">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="{{ request.base_url }}">
+    <meta property="twitter:title" content="osu! to Clone Hero Timing Converter">
+    <meta property="twitter:description" content="Convert timing points from osu! beatmaps to Clone Hero chart format. Free online tool for rhythm game mappers.">
+    <meta property="twitter:image" content="{{ url_for('static', filename='img/preview.png', _external=True) }}">
+    
+    <!-- Discord embed support -->
+    <meta name="theme-color" content="#FF66AA">
+    
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     {% block extra_css %}{% endblock %}
