@@ -3,6 +3,34 @@
  */
 
 document.addEventListener("DOMContentLoaded", function() {
+    // Theme switching functionality
+    const themeToggle = document.getElementById('theme-toggle');
+    
+    // Check for saved theme preference or use default (dark)
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    
+    // Apply the saved theme on load
+    if (savedTheme === 'light') {
+        document.body.classList.add('light-theme');
+        themeToggle.checked = false;
+    } else {
+        document.body.classList.remove('light-theme');
+        themeToggle.checked = true;
+    }
+    
+    // Handle theme toggle click
+    themeToggle.addEventListener('change', function() {
+        if (this.checked) {
+            // Dark theme
+            document.body.classList.remove('light-theme');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            // Light theme
+            document.body.classList.add('light-theme');
+            localStorage.setItem('theme', 'light');
+        }
+    });
+    
     // Copy to clipboard functionality
     const copyButtons = document.querySelectorAll('.btn-copy');
     
