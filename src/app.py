@@ -79,7 +79,8 @@ def convert():
         flash('Invalid beatmap URL. Please use a URL from osu! or beatconnect.io')
         return redirect(url_for('index'))
 
-    download_url = f"https://beatconnect.io/b/{beatmap_id}"
+    fallback_url = f"https://beatconnect.io/b/{beatmap_id}"
+    download_url = f"https://nerinyan.moe/d/{beatmap_id}"
     
     try:
         # Download the beatmap
@@ -92,6 +93,11 @@ def convert():
         }
         
         response = requests.get(download_url, headers=headers, stream=True)
+
+        # If the beatmap is not found, try the fallback URL
+        if response.status_code == 404:
+            logger.info(f"Beatmap not found at {download_url}, trying fallback URL {fallback_url}")
+            response = requests.get(fallback_url, headers=headers, stream=True)
         
         if response.status_code != 200:
             flash(f'Failed to download beatmap. Status code: {response.status_code}')
