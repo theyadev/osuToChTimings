@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-osu! to Clone Hero Web Converter
+Beatmap to Chart Converter
 
 A web application that allows users to enter a link to an osu! beatmap,
 downloads the beatmap, extracts the .osu file, and converts the timing points
-to Clone Hero format.
+to Clone Hero chart format.
 """
 
 import os

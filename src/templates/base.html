@@ -3,25 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}osu! to Clone Hero Converter{% endblock %}</title>
+    <title>{% block title %}Beatmap to Chart Converter{% endblock %}</title>
     
     <!-- Primary Meta Tags -->
-    <meta name="title" content="osu! to Clone Hero Timing Converter">
+    <meta name="title" content="Beatmap to Chart Converter">
     <meta name="description" content="Convert timing points from osu! beatmaps to Clone Hero chart format. A free online tool for rhythm game mappers.">
-    <meta name="keywords" content="osu, Clone Hero, rhythm games, beatmap converter, chart converter, BPM conversion, timing points">
+    <meta name="keywords" content="osu, Clone Hero, chart, rhythm games, beatmap converter, chart converter, BPM conversion, timing points">
     <meta name="author" content="theyadev">
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ request.base_url }}">
-    <meta property="og:title" content="osu! to Clone Hero Timing Converter">
+    <meta property="og:title" content="Beatmap to Chart Converter">
     <meta property="og:description" content="Convert timing points from osu! beatmaps to Clone Hero chart format. Free online tool for rhythm game mappers.">
     <meta property="og:image" content="{{ url_for('static', filename='img/preview.png', _external=True) }}">
     
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="{{ request.base_url }}">
-    <meta property="twitter:title" content="osu! to Clone Hero Timing Converter">
+    <meta property="twitter:title" content="Beatmap to Chart Converter">
     <meta property="twitter:description" content="Convert timing points from osu! beatmaps to Clone Hero chart format. Free online tool for rhythm game mappers.">
     <meta property="twitter:image" content="{{ url_for('static', filename='img/preview.png', _external=True) }}">
     
@@ -35,7 +35,7 @@
 <body>
     <header>
         <div class="container">
-            <a href="{{ url_for('index') }}" class="logo">osu<span>ToCH</span></a>
+            <a href="{{ url_for('index') }}" class="logo">beatmap<span>ToChart</span></a>
             <nav>
                 <ul>
                     <li><a href="{{ url_for('index') }}">Home</a></li>
