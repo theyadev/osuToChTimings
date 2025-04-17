@@ -17,6 +17,7 @@ DEFAULT_TIME_SIGNATURE = 4
 # Configure logging
 logger = logging.getLogger(__name__)
 
+
 def extract_timing_points(osu_file_path: str) -> List[str]:
     """Extract timing points from an osu! beatmap file.
 
@@ -70,20 +71,10 @@ def convert_to_clone_hero_format(
     Returns:
         List of Clone Hero timing points [ticks, bpm, signature, minutes]
     """
-    # Get the first BPM for the initial point at 0
-    try:
-        first_parts = timing_points[0].split(",")
-        first_beat_length = float(first_parts[1])
-        first_signature = int(first_parts[2])
-        first_bpm = round(60000 / first_beat_length)
-        
-        # Start with a timing point at tick 0 with the first BPM
-        ch_timing_lines = [[0, first_bpm, first_signature, 0.0]]
-    except (IndexError, ValueError, ZeroDivisionError):
-        # Fallback to default values if there's an error
-        ch_timing_lines = [[0, DEFAULT_BPM, DEFAULT_TIME_SIGNATURE, 0.0]]
+    # Start with a default timing point at tick 0
+    ch_timing_lines = [[0, DEFAULT_BPM, DEFAULT_TIME_SIGNATURE, 0.0]]
 
-    for i, line in enumerate(timing_points):
+    for line in timing_points:
         try:
             # Parse osu! timing point values
             parts = line.split(",")
@@ -97,10 +88,6 @@ def convert_to_clone_hero_format(
 
             # Calculate BPM from beat length
             bpm = round(60000 / beat_length)
-            
-            # Skip if this is the first point and we already added it at tick 0
-            if i == 0 and timing == 0:
-                continue
 
             # Convert osu! timing (ms) to minutes
             minutes = timing / 60000
@@ -108,10 +95,10 @@ def convert_to_clone_hero_format(
             # Calculate ticks based on time elapsed since last timing point
             last_tick, last_bpm, _, last_minutes = ch_timing_lines[-1]
             minutes_elapsed = minutes - last_minutes
-            
+
             # Calculate ticks elapsed using the formula: minutes * BPM * tick_rate
             ticks_elapsed = round(minutes_elapsed * last_bpm * tick_rate)
-            
+
             ticks = last_tick + ticks_elapsed
 
             # Add the new timing point
@@ -148,4 +135,4 @@ def generate_clone_hero_output(ch_timing_lines: List[Tuple[int, int, int, float]
 
     lines.append("}")
 
-    return "\n".join(lines) 
+    return "\n".join(lines)
