@@ -89,9 +89,11 @@ def convert_to_clone_hero_format(
             # Calculate BPM from beat length
             bpm = round(60000 / beat_length)
 
+            while timing < 0:
+                timing += beat_length
+
             # Convert osu! timing (ms) to minutes
             minutes = timing / 60000
-
             # Calculate ticks based on time elapsed since last timing point
             last_tick, last_bpm, _, last_minutes = ch_timing_lines[-1]
             minutes_elapsed = minutes - last_minutes

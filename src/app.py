@@ -23,12 +23,8 @@ import time
 # Add parent directory to path so we can import the conversion code
 # This approach works for local development
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if os.path.exists(os.path.join(parent_dir, 'main.py')):
-    sys.path.append(parent_dir)
-    from main import extract_timing_points, convert_to_clone_hero_format, generate_clone_hero_output
-else:
-    # For Vercel deployment - main.py should be copied to the same directory
-    from conversion import extract_timing_points, convert_to_clone_hero_format, generate_clone_hero_output
+
+from conversion import extract_timing_points, convert_to_clone_hero_format, generate_clone_hero_output
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
