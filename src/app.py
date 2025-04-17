@@ -80,7 +80,7 @@ def convert():
         return redirect(url_for('index'))
 
     fallback_url = f"https://beatconnect.io/b/{beatmap_id}"
-    download_url = f"https://nerinyan.moe/d/{beatmap_id}"
+    download_url = f"https://api.nerinyan.moe/d/{beatmap_id}"
     
     try:
         # Download the beatmap
