@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}About - osu! to Clone Hero Converter{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>About osu! to Clone Hero Converter</h1>
+    
+    <p>
+        This web application is an online interface for the osuToCH tool, which converts timing points 
+        (BPM changes and time signatures) from osu! beatmap files to Clone Hero chart format.
+    </p>
+    
+    <h2>Features</h2>
+    <ul>
+        <li>Direct download of osu! beatmaps from the official site</li>
+        <li>Automatic extraction of timing data from .osu files</li>
+        <li>Precise conversion of osu! timing points to Clone Hero's tick-based format</li>
+        <li>Supports multiple BPM changes and time signatures</li>
+        <li>Generates properly formatted Clone Hero SyncTrack sections</li>
+    </ul>
+    
+    <h2>How It Works</h2>
+    <ol>
+        <li><strong>Downloading:</strong> The application downloads the beatmap from the osu! website.</li>
+        <li><strong>Extraction:</strong> It extracts the .osu file from the downloaded beatmap package.</li>
+        <li><strong>Parsing:</strong> The application parses the timing points from the [TimingPoints] section.</li>
+        <li><strong>Conversion:</strong> osu! timing points (in milliseconds) are converted to Clone Hero's tick-based system using a formula that ensures precise alignment.</li>
+        <li><strong>Output:</strong> The application generates a properly formatted SyncTrack section ready for use in Clone Hero charts.</li>
+    </ol>
+    
+    <h2>Technical Details</h2>
+    <p>
+        osu! stores timing information in milliseconds, while Clone Hero uses a tick-based system (192 ticks per beat by default).
+        The conversion process calculates the exact tick positions based on elapsed time and BPM changes to ensure accurate timing.
+    </p>
+    <p>
+        The formula used for conversion is: <code>ticks = elapsed_minutes * BPM * tick_rate</code>
+    </p>
+    
+    <h2>Open Source</h2>
+    <p>
+        This project is open source and available on GitHub:
+        <a href="https://github.com/theyadev/osuToChTimings" target="_blank">https://github.com/theyadev/osuToChTimings</a>
+    </p>
+    <p>
+        Contributions, bug reports, and feature requests are welcome!
+    </p>
+    
+    <h2>Acknowledgments</h2>
+    <ul>
+        <li><a href="https://github.com/TheNathannator/GuitarGame_ChartFormats/blob/main/doc/FileFormats/General%20Notes.md" target="_blank">Clone Hero Chart Format Documentation</a></li>
+        <li><a href="https://osu.ppy.sh/wiki/en/Client/File_formats/osu_%28file_format%29#timing-points" target="_blank">osu! File Format Documentation</a></li>
+    </ul>
+</div>
+{% endblock %} 

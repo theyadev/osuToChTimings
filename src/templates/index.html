@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}osu! to Clone Hero Converter{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>osu! to Clone Hero Timing Converter</h1>
+    <p>
+        Convert timing points (BPM changes and time signatures) from any osu! beatmap to Clone Hero chart format.
+        Simply enter the URL of an osu! beatmap below.
+    </p>
+    
+    <form id="convert-form" action="{{ url_for('convert') }}" method="post">
+        <div class="form-group">
+            <label for="beatmap_url">osu! Beatmap URL:</label>
+            <input type="url" id="beatmap_url" name="beatmap_url" 
+                   placeholder="https://osu.ppy.sh/beatmapsets/12345" required>
+            <small>Example: https://osu.ppy.sh/beatmapsets/1388896</small>
+        </div>
+        
+        <button type="submit" class="btn">Convert</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>How It Works</h2>
+    <ol>
+        <li>Enter the URL of an osu! beatmap set</li>
+        <li>The application will download the beatmap and extract the first .osu file</li>
+        <li>Timing points are extracted and converted to Clone Hero format</li>
+        <li>Copy the generated SyncTrack section to your Clone Hero .chart file</li>
+    </ol>
+    
+    <div class="info-box">
+        <h3>Important Notes</h3>
+        <ul>
+            <li>For accurate timing conversion, use the exact same audio file in Clone Hero as the one from the osu! beatmap</li>
+            <li>Clone Hero uses 192 ticks per beat as the standard rate</li>
+            <li>The first timing point is always placed at tick 0 to ensure proper alignment</li>
+        </ul>
+    </div>
+</div>
+{% endblock %} 

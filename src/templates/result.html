@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Conversion Result - osu! to Clone Hero Converter{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Conversion Result</h1>
+    
+    {% if beatmap_info %}
+    <div class="beatmap-info">
+        <h3>Beatmap Information</h3>
+        <dl>
+            {% if beatmap_info.title %}
+            <dt>Title</dt>
+            <dd>{{ beatmap_info.title }}</dd>
+            {% endif %}
+            
+            {% if beatmap_info.artist %}
+            <dt>Artist</dt>
+            <dd>{{ beatmap_info.artist }}</dd>
+            {% endif %}
+            
+            {% if beatmap_info.creator %}
+            <dt>Creator</dt>
+            <dd>{{ beatmap_info.creator }}</dd>
+            {% endif %}
+            
+            {% if beatmap_info.version %}
+            <dt>Difficulty</dt>
+            <dd>{{ beatmap_info.version }}</dd>
+            {% endif %}
+        </dl>
+    </div>
+    {% endif %}
+    
+    <div class="output-container">
+        <pre id="output-content">{{ output }}</pre>
+    </div>
+    
+    <div class="actions" style="margin-top: 20px;">
+        <button class="btn btn-copy" data-target="#output-content">Copy to Clipboard</button>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Convert Another</a>
+    </div>
+    
+    <div class="instructions" style="margin-top: 30px;">
+        <h3>Using the Output</h3>
+        <ol>
+            <li>Copy the SyncTrack section above</li>
+            <li>Paste it into your Clone Hero .chart file</li>
+            <li>Replace the existing SyncTrack section if there is one</li>
+            <li>Make sure to use the same audio file from the osu! beatmap for accurate timing</li>
+        </ol>
+    </div>
+</div>
+{% endblock %} 
