@@ -18,6 +18,7 @@ import tempfile
 import shutil
 from urllib.parse import urlparse
 from flask import Flask, render_template, request, jsonify, flash, redirect, url_for, send_file, session
+import time
 
 # Add parent directory to path so we can import the conversion code
 # This approach works for local development
@@ -40,10 +41,19 @@ BEATCONNECT_URL_PATTERN = r'https?://beatconnect\.io/b/(\d+)(?:/?.*)?'
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max upload size
-app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
 
-# Ensure the upload directory exists
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+# Use in-memory storage for files in production (Vercel)
+if os.environ.get('VERCEL', False):
+    temp_base_dir = tempfile.mkdtemp()
+    app.config['UPLOAD_FOLDER'] = temp_base_dir
+else:
+    # In development, use a persistent folder
+    app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+    # Ensure the upload directory exists
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+# Store audio file data in session for Vercel environment
+session_files = {}
 
 @app.route('/')
 def index():
@@ -89,30 +99,26 @@ def convert():
 
         # Create a unique session ID for this download
         session_id = os.urandom(16).hex()
-        session_dir = os.path.join(app.config['UPLOAD_FOLDER'], session_id)
-        os.makedirs(session_dir, exist_ok=True)
-        
-        # Save the downloaded file
-        osz_path = os.path.join(session_dir, f"{beatmap_id}.osz")
-        with open(osz_path, 'wb') as f:
-            f.write(response.content)
         
         # Create a temporary directory to extract and process files
         with tempfile.TemporaryDirectory() as temp_dir:
+            # Save the downloaded file to the temporary directory
+            osz_path = os.path.join(temp_dir, f"{beatmap_id}.osz")
+            with open(osz_path, 'wb') as f:
+                f.write(response.content)
+            
             # Extract the .osz file (which is just a zip)
             try:
                 with zipfile.ZipFile(osz_path) as zip_ref:
                     zip_ref.extractall(temp_dir)
             except zipfile.BadZipFile:
                 flash('The downloaded file is not a valid .osz file')
-                shutil.rmtree(session_dir)
                 return redirect(url_for('index'))
             
             # Find the first .osu file
             osu_files = [f for f in os.listdir(temp_dir) if f.endswith('.osu')]
             if not osu_files:
                 flash('No .osu files found in the beatmap')
-                shutil.rmtree(session_dir)
                 return redirect(url_for('index'))
             
             osu_file_path = os.path.join(temp_dir, osu_files[0])
@@ -145,12 +151,27 @@ def convert():
                 except Exception as e:
                     logger.error(f"Error extracting metadata: {str(e)}")
             
-            # If we found an audio file, copy it to the session directory
+            # If we found an audio file, store it in memory for Vercel or in the session dir for local
             has_audio = False
             if audio_filename and os.path.exists(os.path.join(temp_dir, audio_filename)):
                 audio_src_path = os.path.join(temp_dir, audio_filename)
-                audio_dest_path = os.path.join(session_dir, audio_filename)
-                shutil.copy2(audio_src_path, audio_dest_path)
+                
+                # For Vercel: store in memory
+                if os.environ.get('VERCEL', False):
+                    with open(audio_src_path, 'rb') as audio_file:
+                        audio_data = audio_file.read()
+                        session_files[session_id] = {
+                            'filename': audio_filename,
+                            'data': audio_data,
+                            'timestamp': time.time()
+                        }
+                else:
+                    # For local: store in uploads directory
+                    session_dir = os.path.join(app.config['UPLOAD_FOLDER'], session_id)
+                    os.makedirs(session_dir, exist_ok=True)
+                    audio_dest_path = os.path.join(session_dir, audio_filename)
+                    shutil.copy2(audio_src_path, audio_dest_path)
+                
                 has_audio = True
                 session['audio_filename'] = audio_filename
                 session['session_id'] = session_id
@@ -172,7 +193,6 @@ def convert():
                 )
             except Exception as e:
                 flash(f'Error converting timing points: {str(e)}')
-                shutil.rmtree(session_dir)
                 return redirect(url_for('index'))
     
     except Exception as e:
@@ -189,22 +209,50 @@ def download_audio():
         flash('Audio file not available')
         return redirect(url_for('index'))
     
-    audio_path = os.path.join(app.config['UPLOAD_FOLDER'], session_id, audio_filename)
-    
-    if not os.path.exists(audio_path):
-        flash('Audio file not found')
-        return redirect(url_for('index'))
-    
-    return send_file(audio_path, as_attachment=True, download_name=audio_filename)
+    # Check if we're using in-memory storage (Vercel)
+    if os.environ.get('VERCEL', False):
+        if session_id in session_files and 'data' in session_files[session_id]:
+            audio_data = session_files[session_id]['data']
+            return send_file(
+                io.BytesIO(audio_data),
+                mimetype='application/octet-stream',
+                as_attachment=True,
+                download_name=audio_filename
+            )
+        else:
+            flash('Audio file not found')
+            return redirect(url_for('index'))
+    else:
+        # Using file system storage
+        audio_path = os.path.join(app.config['UPLOAD_FOLDER'], session_id, audio_filename)
+        
+        if not os.path.exists(audio_path):
+            flash('Audio file not found')
+            return redirect(url_for('index'))
+        
+        return send_file(audio_path, as_attachment=True, download_name=audio_filename)
 
 @app.route('/about')
 def about():
     """Render the about page."""
     return render_template('about.html')
 
-# Cleanup function to remove old files (can be run periodically)
+# Cleanup function to remove old files (only needed for local development)
 def cleanup_old_files():
     """Clean up files older than 1 hour"""
+    if os.environ.get('VERCEL', False):
+        # On Vercel, cleanup temp files from memory
+        current_time = time.time()
+        to_remove = []
+        for session_id, file_info in session_files.items():
+            if 'timestamp' in file_info and current_time - file_info['timestamp'] > 3600:
+                to_remove.append(session_id)
+        
+        for session_id in to_remove:
+            del session_files[session_id]
+        
+        return
+        
     import time
     current_time = time.time()
     uploads_folder = app.config['UPLOAD_FOLDER']
