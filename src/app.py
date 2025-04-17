@@ -19,8 +19,14 @@ from urllib.parse import urlparse
 from flask import Flask, render_template, request, jsonify, flash, redirect, url_for
 
 # Add parent directory to path so we can import the conversion code
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from main import extract_timing_points, convert_to_clone_hero_format, generate_clone_hero_output
+# This approach works for local development
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if os.path.exists(os.path.join(parent_dir, 'main.py')):
+    sys.path.append(parent_dir)
+    from main import extract_timing_points, convert_to_clone_hero_format, generate_clone_hero_output
+else:
+    # For Vercel deployment - main.py should be copied to the same directory
+    from conversion import extract_timing_points, convert_to_clone_hero_format, generate_clone_hero_output
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -30,7 +36,7 @@ logger = logging.getLogger(__name__)
 OSU_BEATMAP_URL_PATTERN = r'https?://osu\.ppy\.sh/beatmapsets/(\d+)(?:#.+)?'
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)
+app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max upload size
 
 @app.route('/')
@@ -60,10 +66,9 @@ def convert():
         # Download the beatmap
         logger.info(f"Downloading beatmap from {download_url}")
         
-        # osu! website requires a user agent and referer to be set
+        # Set headers for the request
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
-            'Referer': f'https://osu.ppy.sh/beatmapsets/{beatmap_id}'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
         }
         
         response = requests.get(download_url, headers=headers, stream=True)
