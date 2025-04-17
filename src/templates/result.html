@@ -25,9 +25,9 @@
             <dd>{{ beatmap_info.creator }}</dd>
             {% endif %}
             
-            {% if beatmap_info.version %}
-            <dt>Difficulty</dt>
-            <dd>{{ beatmap_info.version }}</dd>
+            {% if audio_filename %}
+            <dt>Audio File</dt>
+            <dd>{{ audio_filename }}</dd>
             {% endif %}
         </dl>
     </div>
@@ -39,6 +39,9 @@
     
     <div class="actions" style="margin-top: 20px;">
         <button class="btn btn-copy" data-target="#output-content">Copy to Clipboard</button>
+        {% if has_audio %}
+        <a href="{{ url_for('download_audio') }}" class="btn btn-download">Download Audio</a>
+        {% endif %}
         <a href="{{ url_for('index') }}" class="btn btn-secondary">Convert Another</a>
     </div>
     
@@ -49,6 +52,9 @@
             <li>Paste it into your Clone Hero .chart file</li>
             <li>Replace the existing SyncTrack section if there is one</li>
             <li>Make sure to use the same audio file from the osu! beatmap for accurate timing</li>
+            {% if has_audio %}
+            <li>Click "Download Audio" to get the audio file from this beatmap</li>
+            {% endif %}
         </ol>
     </div>
 </div>

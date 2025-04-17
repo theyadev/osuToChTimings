@@ -212,4 +212,19 @@ footer a {
   nav li {
     margin: 0 10px;
   }
+}
+
+.btn-download {
+  background-color: #28a745;
+  margin-left: 10px;
+}
+
+.btn-download:hover {
+  background-color: #218838;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 } 

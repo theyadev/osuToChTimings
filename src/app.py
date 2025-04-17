@@ -15,8 +15,9 @@ import zipfile
 import io
 import logging
 import tempfile
+import shutil
 from urllib.parse import urlparse
-from flask import Flask, render_template, request, jsonify, flash, redirect, url_for
+from flask import Flask, render_template, request, jsonify, flash, redirect, url_for, send_file, session
 
 # Add parent directory to path so we can import the conversion code
 # This approach works for local development
@@ -34,10 +35,15 @@ logger = logging.getLogger(__name__)
 
 # Constants
 OSU_BEATMAP_URL_PATTERN = r'https?://osu\.ppy\.sh/beatmapsets/(\d+)(?:#.+)?'
+BEATCONNECT_URL_PATTERN = r'https?://beatconnect\.io/b/(\d+)(?:/?.*)?'
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max upload size
+app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+
+# Ensure the upload directory exists
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 @app.route('/')
 def index():
@@ -54,21 +60,25 @@ def convert():
         return redirect(url_for('index'))
 
     # Validate the URL
-    match = re.match(OSU_BEATMAP_URL_PATTERN, beatmap_url)
-    if not match:
-        flash('Invalid osu! beatmap URL. It should be in the format: https://osu.ppy.sh/beatmapsets/XXXXX')
+    beatmap_id = None
+    if re.match(BEATCONNECT_URL_PATTERN, beatmap_url):
+        beatmap_id = re.match(BEATCONNECT_URL_PATTERN, beatmap_url).group(1)
+    elif re.match(OSU_BEATMAP_URL_PATTERN, beatmap_url):
+        beatmap_id = re.match(OSU_BEATMAP_URL_PATTERN, beatmap_url).group(1)
+    else:
+        flash('Invalid beatmap URL. Please use a URL from osu! or beatconnect.io')
         return redirect(url_for('index'))
 
-    beatmap_id = match.group(1)
     download_url = f"https://beatconnect.io/b/{beatmap_id}"
     
     try:
         # Download the beatmap
         logger.info(f"Downloading beatmap from {download_url}")
         
-        # Set headers for the request
+        # osu! website requires a user agent and referer to be set
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
+            'Referer': f'https://osu.ppy.sh/beatmapsets/{beatmap_id}'
         }
         
         response = requests.get(download_url, headers=headers, stream=True)
@@ -76,27 +86,41 @@ def convert():
         if response.status_code != 200:
             flash(f'Failed to download beatmap. Status code: {response.status_code}')
             return redirect(url_for('index'))
+
+        # Create a unique session ID for this download
+        session_id = os.urandom(16).hex()
+        session_dir = os.path.join(app.config['UPLOAD_FOLDER'], session_id)
+        os.makedirs(session_dir, exist_ok=True)
         
-        # Create a temporary directory to extract files
+        # Save the downloaded file
+        osz_path = os.path.join(session_dir, f"{beatmap_id}.osz")
+        with open(osz_path, 'wb') as f:
+            f.write(response.content)
+        
+        # Create a temporary directory to extract and process files
         with tempfile.TemporaryDirectory() as temp_dir:
             # Extract the .osz file (which is just a zip)
             try:
-                with zipfile.ZipFile(io.BytesIO(response.content)) as zip_ref:
+                with zipfile.ZipFile(osz_path) as zip_ref:
                     zip_ref.extractall(temp_dir)
             except zipfile.BadZipFile:
                 flash('The downloaded file is not a valid .osz file')
+                shutil.rmtree(session_dir)
                 return redirect(url_for('index'))
             
             # Find the first .osu file
             osu_files = [f for f in os.listdir(temp_dir) if f.endswith('.osu')]
             if not osu_files:
                 flash('No .osu files found in the beatmap')
+                shutil.rmtree(session_dir)
                 return redirect(url_for('index'))
             
             osu_file_path = os.path.join(temp_dir, osu_files[0])
             
-            # Extract the beatmap info for display
+            # Extract the beatmap info for display and get audio filename
             beatmap_info = {}
+            audio_filename = None
+            
             with open(osu_file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
                 
@@ -106,6 +130,7 @@ def convert():
                     artist_match = re.search(r'Artist:(.*)', content)
                     creator_match = re.search(r'Creator:(.*)', content)
                     version_match = re.search(r'Version:(.*)', content)
+                    audio_match = re.search(r'AudioFilename:(.*)', content)
                     
                     if title_match:
                         beatmap_info['title'] = title_match.group(1).strip()
@@ -115,8 +140,20 @@ def convert():
                         beatmap_info['creator'] = creator_match.group(1).strip()
                     if version_match:
                         beatmap_info['version'] = version_match.group(1).strip()
+                    if audio_match:
+                        audio_filename = audio_match.group(1).strip()
                 except Exception as e:
                     logger.error(f"Error extracting metadata: {str(e)}")
+            
+            # If we found an audio file, copy it to the session directory
+            has_audio = False
+            if audio_filename and os.path.exists(os.path.join(temp_dir, audio_filename)):
+                audio_src_path = os.path.join(temp_dir, audio_filename)
+                audio_dest_path = os.path.join(session_dir, audio_filename)
+                shutil.copy2(audio_src_path, audio_dest_path)
+                has_audio = True
+                session['audio_filename'] = audio_filename
+                session['session_id'] = session_id
             
             # Convert the timing points
             try:
@@ -129,20 +166,59 @@ def convert():
                 return render_template(
                     'result.html', 
                     output=ch_output, 
-                    beatmap_info=beatmap_info
+                    beatmap_info=beatmap_info,
+                    has_audio=has_audio,
+                    audio_filename=audio_filename
                 )
             except Exception as e:
                 flash(f'Error converting timing points: {str(e)}')
+                shutil.rmtree(session_dir)
                 return redirect(url_for('index'))
     
     except Exception as e:
         flash(f'Error: {str(e)}')
         return redirect(url_for('index'))
 
+@app.route('/download_audio')
+def download_audio():
+    """Download the audio file from the extracted beatmap."""
+    session_id = session.get('session_id')
+    audio_filename = session.get('audio_filename')
+    
+    if not session_id or not audio_filename:
+        flash('Audio file not available')
+        return redirect(url_for('index'))
+    
+    audio_path = os.path.join(app.config['UPLOAD_FOLDER'], session_id, audio_filename)
+    
+    if not os.path.exists(audio_path):
+        flash('Audio file not found')
+        return redirect(url_for('index'))
+    
+    return send_file(audio_path, as_attachment=True, download_name=audio_filename)
+
 @app.route('/about')
 def about():
     """Render the about page."""
     return render_template('about.html')
+
+# Cleanup function to remove old files (can be run periodically)
+def cleanup_old_files():
+    """Clean up files older than 1 hour"""
+    import time
+    current_time = time.time()
+    uploads_folder = app.config['UPLOAD_FOLDER']
+    
+    for session_folder in os.listdir(uploads_folder):
+        session_path = os.path.join(uploads_folder, session_folder)
+        if os.path.isdir(session_path):
+            # If folder is older than 1 hour
+            if current_time - os.path.getctime(session_path) > 3600:
+                try:
+                    shutil.rmtree(session_path)
+                    logger.info(f"Cleaned up old session folder: {session_folder}")
+                except Exception as e:
+                    logger.error(f"Error cleaning up folder {session_folder}: {str(e)}")
 
 if __name__ == '__main__':
     app.run(debug=True) 
