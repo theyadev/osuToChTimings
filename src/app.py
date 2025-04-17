@@ -95,7 +95,7 @@ def convert():
         response = requests.get(download_url, headers=headers, stream=True)
 
         # If the beatmap is not found, try the fallback URL
-        if response.status_code == 404:
+        if response.status_code != 200:
             logger.info(f"Beatmap not found at {download_url}, trying fallback URL {fallback_url}")
             response = requests.get(fallback_url, headers=headers, stream=True)
         
@@ -169,7 +169,8 @@ def convert():
                         session_files[session_id] = {
                             'filename': audio_filename,
                             'data': audio_data,
-                            'timestamp': time.time()
+                            'timestamp': time.time(),
+                            'beatmap_info': beatmap_info
                         }
                 else:
                     # For local: store in uploads directory
@@ -177,6 +178,11 @@ def convert():
                     os.makedirs(session_dir, exist_ok=True)
                     audio_dest_path = os.path.join(session_dir, audio_filename)
                     shutil.copy2(audio_src_path, audio_dest_path)
+                    
+                    # Save beatmap info for later use
+                    import json
+                    with open(os.path.join(session_dir, 'beatmap_info.json'), 'w', encoding='utf-8') as f:
+                        json.dump(beatmap_info, f, ensure_ascii=False, indent=2)
                 
                 has_audio = True
                 session['audio_filename'] = audio_filename
@@ -190,11 +196,27 @@ def convert():
                 ch_timing_lines = convert_to_clone_hero_format(timing_points)
                 ch_output = generate_clone_hero_output(ch_timing_lines)
                 
+                # Store the chart data in the session for download
+                full_chart_content = generate_complete_chart(beatmap_info, audio_filename, ch_timing_lines)
+                
+                if os.environ.get('VERCEL', False):
+                    if session_id in session_files:
+                        session_files[session_id]['chart_content'] = full_chart_content
+                else:
+                    # For local: store in a file
+                    if has_audio:
+                        chart_path = os.path.join(app.config['UPLOAD_FOLDER'], session_id, 'chart.chart')
+                        with open(chart_path, 'w', encoding='utf-8') as f:
+                            f.write(full_chart_content)
+                
+                session['has_chart'] = True
+                
                 return render_template(
                     'result.html', 
                     output=ch_output, 
                     beatmap_info=beatmap_info,
                     has_audio=has_audio,
+                    has_chart=True,
                     audio_filename=audio_filename
                 )
             except Exception as e:
@@ -204,6 +226,69 @@ def convert():
     except Exception as e:
         flash(f'Error: {str(e)}')
         return redirect(url_for('index'))
+
+def generate_complete_chart(beatmap_info, audio_filename, ch_timing_lines):
+    """Generate a complete .chart file with beatmap info and timings."""
+    # Default values
+    title = beatmap_info.get('title', 'Unknown Title')
+    artist = beatmap_info.get('artist', 'Unknown Artist')
+    
+    # Create a clean audio filename based on artist and title
+    if audio_filename:
+        # Get the file extension from the original filename
+        _, ext = os.path.splitext(audio_filename)
+        if not ext:
+            ext = ".mp3"  # Default extension if none is found
+            
+        # Create a clean filename
+        base_name = f"{artist} - {title}"
+        safe_filename = "".join(c for c in base_name if c.isalnum() or c in " -_.").strip()
+        if not safe_filename:
+            safe_filename = "audio"
+        
+        music_stream = f"{safe_filename}{ext}"
+    else:
+        music_stream = ""
+    
+    # Create the chart content
+    chart_content = [
+        "[Song]",
+        "{",
+        f'  Name = "{title}"',
+        f'  Artist = "{artist}"',
+        "  Offset = 0",
+        "  Resolution = 192",
+        "  Player2 = bass",
+        "  Difficulty = 0",
+        "  PreviewStart = 0",
+        "  PreviewEnd = 0",
+        '  Genre = "any"',
+        '  MediaType = "cd"'
+    ]
+    
+    # Add the audio filename if available
+    if music_stream:
+        chart_content.append(f'  MusicStream = "{music_stream}"')
+    
+    chart_content.append("}")
+    
+    # Add the SyncTrack section
+    chart_content.append("[SyncTrack]")
+    chart_content.append("{")
+    
+    # Add the timing points from the processed data
+    for ticks, bpm, signature, _ in ch_timing_lines:
+        chart_content.append(f"  {ticks} = TS {signature}")
+        chart_content.append(f"  {ticks} = B {int(bpm)}000")
+    
+    chart_content.append("}")
+    
+    # Add an empty Events section
+    chart_content.append("[Events]")
+    chart_content.append("{")
+    chart_content.append("}")
+    
+    return "\n".join(chart_content)
 
 @app.route('/download_audio')
 def download_audio():
@@ -215,15 +300,39 @@ def download_audio():
         flash('Audio file not available')
         return redirect(url_for('index'))
     
+    # Get beatmap info from session files for better file naming
+    title = "Unknown"
+    artist = "Unknown"
+    
     # Check if we're using in-memory storage (Vercel)
     if os.environ.get('VERCEL', False):
         if session_id in session_files and 'data' in session_files[session_id]:
             audio_data = session_files[session_id]['data']
+            
+            # Get metadata for filename if available
+            if 'beatmap_info' in session_files[session_id]:
+                info = session_files[session_id]['beatmap_info']
+                title = info.get('title', 'Unknown')
+                artist = info.get('artist', 'Unknown')
+            
+            # Create a clean filename
+            base_name = f"{artist} - {title}"
+            safe_filename = "".join(c for c in base_name if c.isalnum() or c in " -_.").strip()
+            if not safe_filename:
+                safe_filename = "audio"
+            
+            # Get the file extension from the original filename
+            _, ext = os.path.splitext(audio_filename)
+            if not ext:
+                ext = ".mp3"  # Default extension if none is found
+            
+            download_name = f"{safe_filename}{ext}"
+            
             return send_file(
                 io.BytesIO(audio_data),
                 mimetype='application/octet-stream',
                 as_attachment=True,
-                download_name=audio_filename
+                download_name=download_name
             )
         else:
             flash('Audio file not found')
@@ -236,7 +345,33 @@ def download_audio():
             flash('Audio file not found')
             return redirect(url_for('index'))
         
-        return send_file(audio_path, as_attachment=True, download_name=audio_filename)
+        # Get session data for filename
+        session_dir = os.path.join(app.config['UPLOAD_FOLDER'], session_id)
+        info_path = os.path.join(session_dir, 'beatmap_info.json')
+        if os.path.exists(info_path):
+            try:
+                import json
+                with open(info_path, 'r', encoding='utf-8') as f:
+                    info = json.load(f)
+                    title = info.get('title', 'Unknown')
+                    artist = info.get('artist', 'Unknown')
+            except:
+                pass
+        
+        # Create a clean filename
+        base_name = f"{artist} - {title}"
+        safe_filename = "".join(c for c in base_name if c.isalnum() or c in " -_.").strip()
+        if not safe_filename:
+            safe_filename = "audio"
+        
+        # Get the file extension from the original filename
+        _, ext = os.path.splitext(audio_filename)
+        if not ext:
+            ext = ".mp3"  # Default extension if none is found
+        
+        download_name = f"{safe_filename}{ext}"
+        
+        return send_file(audio_path, as_attachment=True, download_name=download_name)
 
 @app.route('/about')
 def about():
@@ -252,6 +387,78 @@ def robots():
 def sitemap():
     """Serve sitemap.xml from static directory."""
     return send_file('static/sitemap.xml')
+
+@app.route('/download_chart')
+def download_chart():
+    """Download the complete .chart file."""
+    session_id = session.get('session_id')
+    
+    if not session_id or not session.get('has_chart'):
+        flash('Chart file not available')
+        return redirect(url_for('index'))
+    
+    # Default filename values
+    title = "Unknown"
+    artist = "Unknown"
+    
+    # Check if we're using in-memory storage (Vercel)
+    if os.environ.get('VERCEL', False):
+        if session_id in session_files and 'chart_content' in session_files[session_id]:
+            chart_content = session_files[session_id]['chart_content']
+            
+            # Get metadata for filename if available
+            if 'beatmap_info' in session_files[session_id]:
+                info = session_files[session_id]['beatmap_info']
+                title = info.get('title', 'Unknown')
+                artist = info.get('artist', 'Unknown')
+            
+            # Create a clean filename
+            base_name = f"{artist} - {title}"
+            safe_filename = "".join(c for c in base_name if c.isalnum() or c in " -_.").strip()
+            if not safe_filename:
+                safe_filename = "chart"
+                
+            chart_filename = f"{safe_filename}.chart"
+            
+            return send_file(
+                io.BytesIO(chart_content.encode('utf-8')),
+                mimetype='text/plain',
+                as_attachment=True,
+                download_name=chart_filename
+            )
+        else:
+            flash('Chart file not found')
+            return redirect(url_for('index'))
+    else:
+        # Using file system storage
+        chart_path = os.path.join(app.config['UPLOAD_FOLDER'], session_id, 'chart.chart')
+        
+        if not os.path.exists(chart_path):
+            flash('Chart file not found')
+            return redirect(url_for('index'))
+        
+        # Get session data for filename
+        session_dir = os.path.join(app.config['UPLOAD_FOLDER'], session_id)
+        info_path = os.path.join(session_dir, 'beatmap_info.json')
+        if os.path.exists(info_path):
+            try:
+                import json
+                with open(info_path, 'r', encoding='utf-8') as f:
+                    info = json.load(f)
+                    title = info.get('title', 'Unknown')
+                    artist = info.get('artist', 'Unknown')
+            except:
+                pass
+        
+        # Create a clean filename
+        base_name = f"{artist} - {title}"
+        safe_filename = "".join(c for c in base_name if c.isalnum() or c in " -_.").strip()
+        if not safe_filename:
+            safe_filename = "chart"
+            
+        chart_filename = f"{safe_filename}.chart"
+        
+        return send_file(chart_path, as_attachment=True, download_name=chart_filename)
 
 # Cleanup function to remove old files (only needed for local development)
 def cleanup_old_files():

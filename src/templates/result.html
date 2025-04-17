@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Conversion Result - osu! to Clone Hero Converter{% endblock %}
+{% block title %}Conversion Result - Beatmap to Chart Converter{% endblock %}
 
 {% block content %}
 <div class="card">
@@ -42,14 +42,29 @@
         {% if has_audio %}
         <a href="{{ url_for('download_audio') }}" class="btn btn-download">Download Audio</a>
         {% endif %}
+        {% if has_chart %}
+        <a href="{{ url_for('download_chart') }}" class="btn btn-secondary">Download .chart</a>
+        {% endif %}
         <a href="{{ url_for('index') }}" class="btn btn-secondary">Convert Another</a>
     </div>
     
     <div class="instructions" style="margin-top: 30px;">
         <h3>Using the Output</h3>
         <ol>
-            <li>Copy the SyncTrack section above</li>
-            <li>Paste it into your .chart file replacing the existing SyncTrack section</li>
+            <li>
+                {% if has_chart %}
+                Click "Download .chart" to get a complete chart file with all timing points and metadata
+                {% else %}
+                Copy the SyncTrack section above
+                {% endif %}
+            </li>
+            <li>
+                {% if has_chart %}
+                Use the downloaded file as a base for your Clone Hero chart
+                {% else %}
+                Paste it into your .chart file replacing the existing SyncTrack section
+                {% endif %}
+            </li>
             <li>Make sure to use the same audio file from the osu! beatmap for accurate Timing
             {% if has_audio %}
             <br>
