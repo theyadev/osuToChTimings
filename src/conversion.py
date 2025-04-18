@@ -73,8 +73,8 @@ def convert_to_clone_hero_format(
     """
     # Start with a default timing point at tick 0
     ch_timing_lines = [[0, DEFAULT_BPM, DEFAULT_TIME_SIGNATURE, 0.0]]
-
-    for line in timing_points:
+    
+    for i, line in enumerate(timing_points):
         try:
             # Parse osu! timing point values
             parts = line.split(",")
@@ -85,6 +85,9 @@ def convert_to_clone_hero_format(
             timing = int(parts[0])
             beat_length = float(parts[1])  # in milliseconds
             signature = int(parts[2])
+
+            if i == 0:
+                ch_timing_lines[0][1] = round((60000 / timing)*4, 2)
 
             # Calculate BPM from beat length
             bpm = round(60000 / beat_length)
