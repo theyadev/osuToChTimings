@@ -90,7 +90,7 @@ def convert_to_clone_hero_format(
                 ch_timing_lines[0][1] = round((60000 / timing)*4, 2)
 
             # Calculate BPM from beat length
-            bpm = round(60000 / beat_length)
+            bpm = 60000 / beat_length
 
             while timing < 0:
                 timing += beat_length
@@ -134,7 +134,11 @@ def generate_clone_hero_output(ch_timing_lines: List[Tuple[int, int, int, float]
 
     for ticks, bpm, signature, _ in ch_timing_lines:
         lines.append(f"  {ticks} = TS {signature}")
-        lines.append(f"  {ticks} = B {int(bpm)}000")
+        
+        # Convert BPM to the format expected by Clone Hero
+        # For example, 120 BPM becomes 120000, 234.23 BPM becomes 234230
+        bpm_value = int(float(bpm) * 1000)
+        lines.append(f"  {ticks} = B {bpm_value}")
 
     lines.append("}")
 
