@@ -91,6 +91,13 @@ def convert_to_clone_hero_format(
 
             # Calculate BPM from beat length
             bpm = 60000 / beat_length
+            
+            # Round to 3 decimal places to avoid floating point precision issues
+            # If the BPM is very close to a whole number (within 0.0001), round to integer
+            if abs(round(bpm) - bpm) < 0.0001:
+                bpm = round(bpm)
+            else:
+                bpm = round(bpm, 3)
 
             while timing < 0:
                 timing += beat_length
@@ -137,7 +144,14 @@ def generate_clone_hero_output(ch_timing_lines: List[Tuple[int, int, int, float]
         
         # Convert BPM to the format expected by Clone Hero
         # For example, 120 BPM becomes 120000, 234.23 BPM becomes 234230
-        bpm_value = int(float(bpm) * 1000)
+        # Ensure we don't have floating point precision issues
+        bpm_float = float(bpm)
+        if abs(round(bpm_float) - bpm_float) < 0.0001:
+            bpm_float = round(bpm_float)
+        else:
+            bpm_float = round(bpm_float, 3)
+            
+        bpm_value = int(bpm_float * 1000)
         lines.append(f"  {ticks} = B {bpm_value}")
 
     lines.append("}")
