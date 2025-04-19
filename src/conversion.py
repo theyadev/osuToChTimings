@@ -86,9 +86,6 @@ def convert_to_clone_hero_format(
             beat_length = float(parts[1])  # in milliseconds
             signature = int(parts[2])
 
-            if i == 0:
-                ch_timing_lines[0][1] = round((60000 / timing)*4, 2)
-
             # Calculate BPM from beat length
             bpm = 60000 / beat_length
             
@@ -101,6 +98,9 @@ def convert_to_clone_hero_format(
 
             while timing < 0:
                 timing += beat_length
+
+            if i == 0:
+                ch_timing_lines[0][1] = round((60000 / timing)*4, 2)
 
             # Convert osu! timing (ms) to minutes
             minutes = timing / 60000
