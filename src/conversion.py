@@ -73,7 +73,7 @@ def convert_to_clone_hero_format(
     """
     # Start with a default timing point at tick 0
     ch_timing_lines = [[0, DEFAULT_BPM, DEFAULT_TIME_SIGNATURE, 0.0]]
-    
+
     for i, line in enumerate(timing_points):
         try:
             # Parse osu! timing point values
@@ -88,7 +88,7 @@ def convert_to_clone_hero_format(
 
             # Calculate BPM from beat length
             bpm = 60000 / beat_length
-            
+
             # Round to 3 decimal places to avoid floating point precision issues
             # If the BPM is very close to a whole number (within 0.0001), round to integer
             if abs(round(bpm) - bpm) < 0.0001:
@@ -100,7 +100,8 @@ def convert_to_clone_hero_format(
                 timing += beat_length
 
             if i == 0:
-                ch_timing_lines[0][1] = round((60000 / timing)*4, 2)
+                if new_bpm := round((60000 / timing) * 4, 2) <= 999:
+                    ch_timing_lines[0][1] = new_bpm
 
             # Convert osu! timing (ms) to minutes
             minutes = timing / 60000
@@ -141,7 +142,7 @@ def generate_clone_hero_output(ch_timing_lines: List[Tuple[int, int, int, float]
 
     for ticks, bpm, signature, _ in ch_timing_lines:
         lines.append(f"  {ticks} = TS {signature}")
-        
+
         # Convert BPM to the format expected by Clone Hero
         # For example, 120 BPM becomes 120000, 234.23 BPM becomes 234230
         # Ensure we don't have floating point precision issues
@@ -150,7 +151,7 @@ def generate_clone_hero_output(ch_timing_lines: List[Tuple[int, int, int, float]
             bpm_float = round(bpm_float)
         else:
             bpm_float = round(bpm_float, 3)
-            
+
         bpm_value = int(bpm_float * 1000)
         lines.append(f"  {ticks} = B {bpm_value}")
 
