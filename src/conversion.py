@@ -100,7 +100,7 @@ def convert_to_clone_hero_format(
                 timing += beat_length
 
             if i == 0:
-                if new_bpm := round((60000 / timing) * 4, 2) <= 999:
+                if (new_bpm := round((60000 / timing) * 4, 2)) <= 999:
                     ch_timing_lines[0][1] = new_bpm
 
             # Convert osu! timing (ms) to minutes
