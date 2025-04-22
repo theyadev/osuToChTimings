@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Beatmap to Chart Converter{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Beatmap to Chart Converter</h1>
+    <p>
+        Convert timing points (BPM changes and time signatures) from any osu! beatmap to Clone Hero chart format.
+        Simply enter the URL of an osu! beatmap below.
+    </p>
+    
+    <form id="convert-form" action="{{ url_for('convert') }}" method="post">
+        <div class="form-group">
+            <label for="beatmap_url">osu! Beatmap URL:</label>
+            <input type="url" id="beatmap_url" name="beatmap_url" 
+                   placeholder="https://osu.ppy.sh/beatmapsets/410162" required>
+            <small>Example: https://osu.ppy.sh/beatmapsets/410162#osu/890190</small>
+        </div>
+        
+        <button type="submit" class="btn">Convert</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>How It Works</h2>
+    <ol>
+        <li>Enter the URL of an osu! beatmap set</li>
+        <li>The application will download the beatmap and extract the first .osu file</li>
+        <li>Timing points are extracted and converted to .chart format</li>
+        <li>Copy the generated SyncTrack section to your .chart file</li>
+    </ol>
+    
+    <div class="info-box">
+        <h3>Important Notes</h3>
+        <ul>
+            <li>For accurate timing conversion, use the exact same audio file in .chart as the one from the osu! beatmap</li>
+            <li>Chart must uses 192 ticks per beat (Resolution)</li>
+        </ul>
+    </div>
+</div>
+{% endblock %} 

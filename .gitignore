@@ -1,1 +1,5 @@
 output.txt
+.env
+.pyc
+__pycache__
+uploads/
