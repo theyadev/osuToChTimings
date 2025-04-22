@@ -1,15 +1,21 @@
-# osu! to Clone Hero Web Converter
+# .osu to .chart Timing Web Converter
 
 A web application that allows users to convert timing points (BPM changes and time signatures) from osu! beatmaps to Clone Hero chart format.
 
 ## Features
 
-- Web interface for the osuToCH conversion tool
-- Direct download of osu! beatmaps from the official site
+- Web interface for the .osu to .chart conversion tool
+- Direct download of osu! beatmaps from the official site or beatconnect.io
 - Automatic extraction of timing data from .osu files
 - Conversion of osu! timing points to Clone Hero format
 - Display of beatmap metadata and conversion results
+- Download complete .chart files with proper metadata
+- Download audio files extracted from beatmaps
 - Copy to clipboard functionality
+- Dark theme interface (default)
+- Responsive design for mobile and desktop
+- Handles negative timing points in osu! files
+- Preserves decimal precision in BPM values
 
 ## Requirements
 
@@ -50,36 +56,14 @@ The application will be available at http://127.0.0.1:5000/
 
 ## Deployment
 
-For production deployment, consider using a proper WSGI server like Gunicorn or uWSGI, along with a reverse proxy like Nginx.
+The application is configured for deployment on Vercel. The `vercel.json` file contains the necessary configuration.
 
-Example with Gunicorn:
+## Common Issues
 
-1. Install Gunicorn:
-   ```bash
-   pip install gunicorn
-   ```
-
-2. Run with Gunicorn:
-   ```bash
-   gunicorn app:app -w 4 -b 0.0.0.0:8000
-   ```
-
-## API Usage
-
-While this is primarily a web application, the core conversion functionality can be imported and used in other Python projects:
-
-```python
-from main import extract_timing_points, convert_to_clone_hero_format, generate_clone_hero_output
-
-# Extract timing points from an osu! file
-timing_points = extract_timing_points("path/to/beatmap.osu")
-
-# Convert to Clone Hero format
-ch_timing_lines = convert_to_clone_hero_format(timing_points, tick_rate=192)
-
-# Generate the output string
-output = generate_clone_hero_output(ch_timing_lines)
-```
+- **Bad beatmap quality**: If the original osu! beatmap has poor timing quality, these inaccuracies will be carried over to the .chart file; choose well-timed beatmaps for best results
+- **Audio misalignment**: If the timing feels off in Clone Hero, ensure you're using the identical audio file from the osu! beatmap
+- **Server limitations**: On the web version, very large beatmaps might time out or fail to process due to serverless function limits
+- **Negative timing points**: The tool will handle negative timing points by moving them to tick 0, which might not be 100% accurate for complex beatmaps
 
 ## License
 

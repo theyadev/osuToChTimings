@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Beatmap to Chart Converter{% endblock %}
+{% block title %}.osu to .chart Timing Converter{% endblock %}
 
 {% block content %}
 <div class="card">
-    <h1>Beatmap to Chart Converter</h1>
+    <h1>.osu to .chart Timing Converter</h1>
     <p>
-        Convert timing points (BPM changes and time signatures) from any osu! beatmap to Clone Hero chart format.
+        Convert timing points (BPM changes and time signatures) from any osu! beatmap to; Moonscraper, Clone Hero, YARG, etc...; .chart format.
         Simply enter the URL of an osu! beatmap below.
     </p>
     
@@ -26,16 +26,18 @@
     <h2>How It Works</h2>
     <ol>
         <li>Enter the URL of an osu! beatmap set</li>
-        <li>The application will download the beatmap and extract the first .osu file</li>
-        <li>Timing points are extracted and converted to .chart format</li>
-        <li>Copy the generated SyncTrack section to your .chart file</li>
+        <li>The application will download the beatmap and extract the .osu file and audio</li>
+        <li>Timing points and metadata are extracted and converted to .chart format</li>
+        <li>Download the complete .chart file and audio ready to use in your editor</li>
     </ol>
     
     <div class="info-box">
         <h3>Important Notes</h3>
         <ul>
-            <li>For accurate timing conversion, use the exact same audio file in .chart as the one from the osu! beatmap</li>
-            <li>Chart must uses 192 ticks per beat (Resolution)</li>
+            <li>For accurate timing conversion, use the audio file downloaded from this tool</li>
+            <li>The generated chart uses 192 ticks per beat (Resolution) - this is the standard in Moonscraper; other editors may require manual adjustment</li>
+            <li>Beatmaps with negative timing points are supported, but may not be 100% accurate</li>
+            <li>For best results, use ranked, qualified, or loved beatmaps as they have the most accurate timing</li>
         </ul>
     </div>
 </div>

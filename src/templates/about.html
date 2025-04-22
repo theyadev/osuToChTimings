@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}About | Beatmap to Chart Converter{% endblock %}
+{% block title %}About | .osu to .chart Timing Converter{% endblock %}
 
 {% block content %}
 <div class="card">
-    <h1>About Beatmap to Chart - Timings Converter</h1>
+    <h1>About .osu to .chart Timing Converter</h1>
     <p>
         This is a tool designed to help rhythm game charters convert timing points from osu! beatmaps to Clone Hero chart format.
-        This web application makes it easy to extract BPM changes and time signatures from any osu! beatmap and generate the corresponding 
-        SyncTrack section for a Clone Hero chart file.
+        This web application makes it easy to extract BPM changes and time signatures from any osu! beatmap and generate a complete
+        .chart file ready for use in Moonscraper.
     </p>
     
     <h2>Features</h2>
@@ -17,16 +17,17 @@
         <li>Automatic extraction of timing data from .osu files</li>
         <li>Precise conversion of osu! timing points to .chart's tick-based format</li>
         <li>Supports multiple BPM changes and time signatures</li>
-        <li>Generates properly formatted chart SyncTrack sections</li>
+        <li>Generates complete .chart files with metadata</li>
+        <li>Provides audio file download from the beatmap</li>
     </ul>
     
     <h2>How It Works</h2>
     <ol>
         <li><strong>Downloading:</strong> The application downloads the beatmap from the osu! website.</li>
-        <li><strong>Extraction:</strong> It extracts the .osu file from the downloaded beatmap package.</li>
-        <li><strong>Parsing:</strong> The application parses the timing points from the [TimingPoints] section.</li>
+        <li><strong>Extraction:</strong> It extracts the .osu file and audio from the downloaded beatmap package.</li>
+        <li><strong>Parsing:</strong> The application parses the timing points and metadata from the .osu file.</li>
         <li><strong>Conversion:</strong> osu! timing points (in milliseconds) are converted to chart's tick-based system using a formula that ensures precise alignment.</li>
-        <li><strong>Output:</strong> The application generates a properly formatted SyncTrack section ready for use in .chart files.</li>
+        <li><strong>Output:</strong> The application generates a complete .chart file with SyncTrack section and proper metadata.</li>
     </ol>
     
     <h2>Technical Details</h2>
@@ -37,6 +38,18 @@
     <p>
         The formula used for conversion is: <code>ticks = elapsed_minutes * BPM * tick_rate</code>
     </p>
+    <p>
+        For negative timing points in osu! files (which can occur in some beatmaps), the converter handles them by moving them to the earliest
+        equivalent position in the .chart file, as .chart does not support negative ticks.
+    </p>
+    
+    <h2>Common Issues</h2>
+    <ul>
+        <li><strong>Bad beatmap quality:</strong> If the original osu! beatmap has poor timing quality, these inaccuracies will be carried over to the .chart file; choose well-timed beatmaps (ranked, qualified, loved) for best results.</li>
+        <li><strong>Audio misalignment:</strong> If the timing feels off in your editor, ensure you're using the identical audio file from the osu! beatmap.</li>
+        <li><strong>Server limitations:</strong> Very large beatmaps might time out or fail to process due to serverless function limits.</li>
+        <li><strong>Negative timing points:</strong> The tool handles negative timing points by moving them to the closest equivalent position, which might not be 100% accurate.</li>
+    </ul>
     
     <h2>Open Source</h2>
     <p>

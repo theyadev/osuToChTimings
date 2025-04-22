@@ -85,7 +85,7 @@ document.addEventListener("DOMContentLoaded", function() {
             const urlPattern = /^https?:\/\/osu\.ppy\.sh\/beatmapsets\/\d+/;
             if (!urlPattern.test(urlInput.value)) {
                 e.preventDefault();
-                showError('Invalid osu! beatmap URL. Please enter a URL like: https://osu.ppy.sh/beatmapsets/123456');
+                showError('Invalid osu! beatmap URL. Please enter a URL like: https://osu.ppy.sh/beatmapsets/410162');
                 return false;
             }
             
